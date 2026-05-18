@@ -1,4 +1,6 @@
-<html lang="ar" dir="rtl"><head>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>أسئلة دينية عشوائية (100 ألف سؤال)</title>
@@ -121,11 +123,12 @@
         }
     </style>
 </head>
-<body data-theme="dark">
+<body>
 
     <div class="container">
         <div class="header-controls">
-            <select id="categoryFilter" onchange="getRandomQuestion()" disabled="">
+            <!-- استدعاء دالة الفلترة الذكية عند تغيير القسم -->
+            <select id="categoryFilter" onchange="filterQuestions()" disabled>
                 <option value="الكل">كل الأقسام</option>
                 <option value="الأنبياء">الأنبياء</option>
                 <option value="الصحابة">الصحابة</option>
@@ -142,42 +145,43 @@
         <div id="answerDisplay" class="answer-box"></div>
 
         <button class="btn-action" onclick="showAnswer()" id="showAnsBtn" style="display: none;">إظهار الإجابة</button>
-        <button class="btn-action" style="background-color: #6c757d; display: none;" id="nextBtn" onclick="getRandomQuestion()">سؤال عشوائي جديد</button>
+        <button class="btn-action" style="background-color: #6c757d; display: none;" id="nextBtn" onclick="getRandomQuestion()">سؤول عشوائي جديد</button>
     </div>
 
     <script>
         let allQuestions = [];
+        let filteredQuestions = []; // مصفوفة الكاش لحفظ الأسئلة المصفاة وتسريع اللعبة
         let currentQuestion = null;
 
-        // دالة لسحب الداتا من ملف خارجي
         async function loadQuestions() {
             try {
-                // تأكد إن ملف questions.json موجود في نفس الفولدر
                 const response = await fetch('questions.json');
                 allQuestions = await response.json();
                 
-                // إخفاء رسالة التحميل وتفعيل الزراير
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('categoryFilter').disabled = false;
                 document.getElementById('nextBtn').style.display = 'block';
                 
-                getRandomQuestion();
+                // نقوم بعمل الفلترة المبدئية بناءً على القيمة الافتراضية للـ Select
+                filterQuestions();
             } catch (error) {
                 document.getElementById('loading').innerText = "حدث خطأ في تحميل الأسئلة. تأكد من وجود ملف questions.json";
                 console.error("Error loading questions:", error);
             }
         }
 
-        function getRandomQuestion() {
-            if (allQuestions.length === 0) return;
-
+        // دالة جديدة كلياً لتصفية الأسئلة مرة واحدة فقط عند تغيير القسم
+        function filterQuestions() {
             const selectedCategory = document.getElementById('categoryFilter').value;
-            
-            let filteredQuestions = allQuestions;
-            if (selectedCategory !== 'الكل') {
+            if (selectedCategory === 'الكل') {
+                filteredQuestions = allQuestions;
+            } else {
                 filteredQuestions = allQuestions.filter(q => q.category === selectedCategory);
             }
+            getRandomQuestion();
+        }
 
+        function getRandomQuestion() {
             if (filteredQuestions.length === 0) {
                 document.getElementById('questionDisplay').innerText = "لا توجد أسئلة في هذا القسم حالياً.";
                 document.getElementById('categoryDisplay').style.display = 'none';
@@ -185,6 +189,7 @@
                 return;
             }
 
+            // السحب الآن من مصفوفة الكاش الجاهزة مباشرة وبسرعة فائقة
             const randomIndex = Math.floor(Math.random() * filteredQuestions.length);
             currentQuestion = filteredQuestions[randomIndex];
 
@@ -215,12 +220,15 @@
         }
 
         window.onload = () => {
-            const savedTheme = localStorage.getItem('theme');
+            // التحقق من السيم المحفوظ وتطبيقه قبل أي شيء لتجنب وميض الشاشة
+            const savedTheme = localStorage.getItem('theme') || 'dark'; // افتراضي dark كما تفضل
             if (savedTheme === 'dark') {
                 document.body.setAttribute('data-theme', 'dark');
+            } else {
+                document.body.removeAttribute('data-theme');
             }
-            loadQuestions(); // استدعاء دالة التحميل أول ما الصفحة تفتح
+            loadQuestions();
         };
     </script>
-
-</body></html>
+</body>
+</html>
