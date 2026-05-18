@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أسئلة دينية عشوائية (100 ألف سؤال)</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --card-bg: #fff;
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --answer-color: #28a745;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --primary-color: #bb86fc;
+            --primary-hover: #9b59b6;
+            --answer-color: #03dac6;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        select, button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--text-color);
+        }
+
+        button.theme-btn {
+            background-color: transparent;
+            font-size: 24px;
+        }
+
+        .question-box {
+            margin: 30px 0;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.5;
+            min-height: 80px;
+        }
+
+        .answer-box {
+            margin: 20px 0;
+            font-size: 20px;
+            color: var(--answer-color);
+            font-weight: bold;
+            display: none;
+            padding: 15px;
+            border: 1px dashed var(--answer-color);
+            border-radius: 8px;
+        }
+
+        .btn-action {
+            background-color: var(--primary-color);
+            color: #fff;
+            width: 100%;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+
+        .btn-action:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .category-badge {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        #loading {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-controls">
+            <select id="categoryFilter" onchange="getRandomQuestion()" disabled>
+                <option value="الكل">كل الأقسام</option>
+                <option value="الأنبياء">الأنبياء</option>
+                <option value="الصحابة">الصحابة</option>
+                <option value="الدين الإسلامي في العموم">الدين الإسلامي في العموم</option>
+            </select>
+            <button class="theme-btn" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
+        </div>
+
+        <div id="loading">جاري تحميل 100 ألف سؤال... يرجى الانتظار</div>
+
+        <div id="categoryDisplay" class="category-badge" style="display: none;">القسم</div>
+        <div id="questionDisplay" class="question-box"></div>
+        
+        <div id="answerDisplay" class="answer-box"></div>
+
+        <button class="btn-action" onclick="showAnswer()" id="showAnsBtn" style="display: none;">إظهار الإجابة</button>
+        <button class="btn-action" style="background-color: #6c757d; display: none;" id="nextBtn" onclick="getRandomQuestion()">سؤال عشوائي جديد</button>
+    </div>
+
+    <script>
+        let allQuestions = [];
+        let currentQuestion = null;
+
+        // دالة لسحب الداتا من ملف خارجي
+        async function loadQuestions() {
+            try {
+                // تأكد إن ملف questions.json موجود في نفس الفولدر
+                const response = await fetch('questions.json');
+                allQuestions = await response.json();
+                
+                // إخفاء رسالة التحميل وتفعيل الزراير
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('categoryFilter').disabled = false;
+                document.getElementById('nextBtn').style.display = 'block';
+                
+                getRandomQuestion();
+            } catch (error) {
+                document.getElementById('loading').innerText = "حدث خطأ في تحميل الأسئلة. تأكد من وجود ملف questions.json";
+                console.error("Error loading questions:", error);
+            }
+        }
+
+        function getRandomQuestion() {
+            if (allQuestions.length === 0) return;
+
+            const selectedCategory = document.getElementById('categoryFilter').value;
+            
+            let filteredQuestions = allQuestions;
+            if (selectedCategory !== 'الكل') {
+                filteredQuestions = allQuestions.filter(q => q.category === selectedCategory);
+            }
+
+            if (filteredQuestions.length === 0) {
+                document.getElementById('questionDisplay').innerText = "لا توجد أسئلة في هذا القسم حالياً.";
+                document.getElementById('categoryDisplay').style.display = 'none';
+                document.getElementById('showAnsBtn').style.display = 'none';
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * filteredQuestions.length);
+            currentQuestion = filteredQuestions[randomIndex];
+
+            document.getElementById('categoryDisplay').innerText = currentQuestion.category;
+            document.getElementById('categoryDisplay').style.display = 'inline-block';
+            document.getElementById('questionDisplay').innerText = currentQuestion.question;
+            
+            const answerBox = document.getElementById('answerDisplay');
+            answerBox.innerText = currentQuestion.answer;
+            answerBox.style.display = 'none'; 
+            document.getElementById('showAnsBtn').style.display = 'block'; 
+        }
+
+        function showAnswer() {
+            document.getElementById('answerDisplay').style.display = 'block';
+            document.getElementById('showAnsBtn').style.display = 'none'; 
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+            loadQuestions(); // استدعاء دالة التحميل أول ما الصفحة تفتح
+        };
+    </script>
+</body>
+</html>
